@@ -1,5 +1,5 @@
 import sbt._
-import Keys._
+import sbt.Keys._
 import com.typesafe.sbt.SbtScalariform
 import com.typesafe.sbt.SbtScalariform.ScalariformKeys
 import android.Keys._
@@ -25,7 +25,6 @@ object ApplicationBuild extends Build with android.AutoBuild {
     sprayNightly,
     sonatype
   )
-
   val scalacSettings = Seq(
     "-Dscalac.patmat.analysisBudget=off",
     "-feature"
@@ -59,19 +58,33 @@ object ApplicationBuild extends Build with android.AutoBuild {
     libraryDependencies         ++= appDependencies,
     resolvers                   ++= appResolvers,
     initialCommands             := PreRun.everything,
-
-    proguardCache in Android ++= Seq(ProguardCache("org.scaloid") % "org.scaloid"),
+    proguardCache in Android ++= Seq(
+      ProguardCache("org.scaloid") % "org.scaloid",
+      ProguardCache("scala") % "org.scala-lang"
+    ),
+    dexMaxHeap in Android := "4g",
     proguardOptions in Android ++= Seq(
       "-dontobfuscate",
       "-dontoptimize",
       "-dontwarn scala.collection.mutable.**",
       "-dontwarn okio.**",
+      "-dontwarn org.w3c.dom.bootstrap.DOMImplementationRegistry",
+      "-dontwarn javax.xml.bind.DatatypeConverter",
+      "-keep class play.api.libs.functional.syntax.package$ { *; }",
       "-keep class scala.collection.SeqLike { public protected *; }",
-      "-keep class org.scaloid.common.TraitContext$class { *; }"
+      "-keep class org.scaloid.common.TraitContext$class { *; }",
+      "-keep class macroid.Contexts$class { *; }",
+      "-keep class scala.Dynamic",
+      "-keep class macroid.contrib.LpTweaks$ { *; }",
+      "-keep class macroid.contrib.TextTweaks$ { *; }",
+      "-keep class macroid.FullDsl$ { *; }",
+      "-keep class scala.Predef$ { *; }"
     ),
     run <<= run in Android,
     install <<= install in Android,
     apkbuildExcludes in Android ++= Seq(
+      "META-INF/LICENSE",
+      "META-INF/NOTICE",
       "META-INF/LICENSE.txt",
       "META-INF/NOTICE.txt"
     ),
@@ -102,6 +115,9 @@ object Resolvers {
     "http://nightlies.spray.io"
   val sonatype   = "Sonatype OSS" at
     "https://oss.sonatype.org"
+  val jcenter    = "jcenter" at
+    "http://jcenter.bintray.com"
+
 }
 
 object Dependencies {
@@ -111,12 +127,17 @@ object Dependencies {
 
   // Misc
   val deps = Seq(
-    "org.scaloid"         %% "scaloid" % "3.4-10",
-    "com.typesafe"        %  "config"  % "1.0.2",
-    "com.nineoldandroids" %  "library" % "2.4.0",
-    "com.squareup.okhttp" % "okhttp"   % "2.0.0",
-    "com.github.nscala-time" %% "nscala-time" % "1.2.0",
-    android.Dependencies.apklib("com.viewpagerindicator" %  "library" % "2.4.1")
+    "org.scaloid"            %% "scaloid"   % "3.4-10",
+    "com.typesafe"           %  "config"    % "1.0.2",
+    "com.nineoldandroids"    %  "library"   % "2.4.0",
+    "com.squareup.okhttp"    % "okhttp"     % "2.0.0",
+    "com.typesafe.play"      %% "play-json" % "2.3.4",
+//    "com.android.support"    % "support-v4" % "20.0.0",
+//    android.Dependencies.apklib("com.viewpagerindicator" %  "library" % "2.4.1"),
+    android.Dependencies.aar("org.macroid" %% "macroid" % "2.0.0-M3")
+//    android.Dependencies.aar("com.daimajia.easing"    % "library"    % "1.0.0"),
+//    android.Dependencies.aar("com.daimajia.swipelayout" % "library" % "1.1.7"),
+//    android.Dependencies.aar("com.daimajia.androidanimations" % "library" % "1.1.2")
   )
 
   // Testing dependencies
